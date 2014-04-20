@@ -1,0 +1,7 @@
+#!/bin/sh
+if [ -z "$1" ]; then
+	echo "usage: mkpage <HTML filename>";
+	exit 1;
+fi;
+/drives/c/Users/gail/Desktop/scripts/mkimages
+/drives/c/Users/gail/Desktop/scripts/mkhtml /drives/c/Users/gail/Desktop/mkpage/$1

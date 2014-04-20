@@ -1,0 +1,6 @@
+#!/bin/sh
+files=$(ls -1 *.jpg *.tif 2>/dev/null)
+for file in $files; do
+	echo "processing $file";
+	$HOME/Desktop/scripts/mkimg $file 2>&1 >/dev/null;
+done

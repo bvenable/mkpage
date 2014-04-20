@@ -1,0 +1,21 @@
+#!/bin/sh
+WWWDIR="/drives/c/Users/gail/Desktop/mkpage"
+if [ -n "$1" ]; then
+	filename=$1;
+else
+	echo "usage: mkhtml <filename>";
+	exit 1;
+fi;
+echo > $filename;
+for img in $(/bin/ls -1 *.jpg | egrep -v -- "-sm\.jpg$" | sort -nr); do
+	year=$(echo $img | cut -f1 -d-)
+	thumbnail=$(echo $img | sed -e 's/\.jpg/-sm.jpg/');
+	pushd $WWWDIR/images/$year/ >/dev/null
+	origsize=$(identify $thumbnail | awk '{print $3}' | sed -e 's/x/ /');
+	popd >/dev/null
+	width=$(echo $origsize | awk '{print $1}');
+	height=$(echo $origsize | awk '{print $2}');
+	code="<a href=\"images/$year/$img\"><img src=\"images/$year/$thumbnail\" alt=\"virtual family photos\" width=\"$width\" height=\"$height\" border=\"0\" /></a>";
+	echo $code >> $filename;
+	echo >> $filename;
+done

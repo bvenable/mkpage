@@ -1,0 +1,72 @@
+#!/bin/sh
+if [ -z "$WWWDIR" ]; then
+	WWWDIR="/drives/c/Users/gail/Desktop/mkpage"
+fi
+if [ -z "{$1}" ]; then
+	echo "usage: $0 <filename>"
+	exit 1;
+fi
+file="$1"
+base=$(echo $file | cut -f1 -d.);
+ext=$(echo $file | cut -f2 -d.);
+year=$(echo $file | cut -f1 -d -);
+if [ $ext = "jpg" ]; then
+	file $file | egrep -iq "TIFF image"
+	if [ $? -eq 0 ]; then
+		ext=tif;
+		mv $file $base.tif;
+	fi
+fi
+if [ $ext = "tif" ]; then
+	file $file | egrep -iq "JPEG image"
+	if [ $? -eq 0 ]; then
+		ext=jpg;
+		mv $file $base.jpg;
+	fi
+fi
+file=$base.$ext;
+origsize=$(identify $file | awk '{print $3}' | sed -e 's/x/ /');
+origx=$(echo $origsize | awk '{print $1}');
+origy=$(echo $origsize | awk '{print $2}');
+if [ "$origsize" = "2856 4272" ]; then
+	thumbsize="90 135";
+	bigsize="600 897";
+elif [ "$origsize" = "4272 2856" ]; then
+	thumbsize="135 90";
+	bigsize="897 600";
+elif [ "$origsize" = "3264 4928" ]; then
+	thumbsize="90 136";
+	bigsize="600 906";
+elif [ "$origsize" = "4928 3264" ]; then
+	thumbsize="136 90";
+	bigsize="906 600";
+elif [ $origx -lt $origy ]; then
+	thumbsize="90 120";
+	bigsize="600 800";
+else
+	thumbsize="120 90";
+	bigsize="800 600";
+fi
+if [ $ext = "tif" ]; then
+	decompress="tifftopnm";
+elif [ $ext = "jpg" ]; then
+	decompress="djpeg";
+else
+	echo "unable to parse file type $ext";
+	exit 1;
+fi;
+thumbsizeprint=$(echo $thumbsize | sed -e 's/ /x/')
+echo "writing $thumbsizeprint thumbnail of $file to $base-sm.jpg"
+$decompress $file $base-sm.pnm
+pnmscale -xysize $thumbsize $base-sm.pnm > $base-sm-scaled.pnm
+cjpeg -optimize -dct float -quality 100 $base-sm-scaled.pnm $base-sm-resized.jpg
+cp $base-sm-resized.jpg $WWWDIR/images/$year/$base-sm.jpg
+bigsizeprint=$(echo $bigsize | sed -e 's/ /x/')
+echo "writing $bigsizeprint version of $file to $base.jpg"
+$decompress $file $base.pnm
+pnmscale -xysize $bigsize $base.pnm > $base-scaled.pnm
+cjpeg -optimize -dct float $base-scaled.pnm $base-resized.jpg
+cp $base-resized.jpg $WWWDIR/images/$year/$base.jpg
+rm -f $base-resized.jpg $base-sm-resized.jpg $base-sm.pnm $base-sm-scaled.pnm $base.pnm $base-scaled.pnm
+#echo "deleting original file"
+#rm -f orig-$file
